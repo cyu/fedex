@@ -27,6 +27,9 @@ module Fedex
       Request::Registration.new(@credentials, options).process_request
     end
 
+    # @param [String] child_account_number, A valid fedex account number to register
+    # @param [Hash] subscriber, A hash containing the subscriber contact information
+    # @param [Hash] account_shipping_address, A hash containing the account shipping address
     def subscribe(options = {})
       Request::Subscribe.new(@credentials, options).process_request
     end
