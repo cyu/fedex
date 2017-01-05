@@ -50,7 +50,7 @@ module Fedex
       def initialize(credentials, options={})
         requires!(options, :shipper, :recipient, :packages)
         @credentials = credentials
-        @shipper, @recipient, @packages, @service_type, @customs_clearance_detail, @debug = options[:shipper], options[:recipient], options[:packages], options[:service_type], options[:customs_clearance_detail], options[:debug]
+        @shipper, @recipient, @packages, @service_type, @customs_clearance_detail, @child_detail, @debug = options[:shipper], options[:recipient], options[:packages], options[:service_type], options[:customs_clearance_detail], options[:child_detail], options[:debug]
         @origin = options[:origin]
         @debug = ENV['DEBUG'] == 'true'
         @shipping_options =  options[:shipping_options] ||={}
@@ -78,19 +78,37 @@ module Fedex
       private
       # Add web authentication detail information(key and password) to xml request
       def add_web_authentication_detail(xml)
-        xml.WebAuthenticationDetail{
-          xml.UserCredential{
-            xml.Key @credentials.key
-            xml.Password @credentials.password
+        if @child_detail
+          xml.WebAuthenticationDetail{
+            xml.ParentCredential{
+              xml.Key @credentials.key
+              xml.Password @credentials.password
+            }
+            xml.UserCredential{
+              xml.Key @credentials.child_key
+              xml.Password @credentials.child_password
+            }
           }
-        }
+        else
+          xml.WebAuthenticationDetail{
+            xml.UserCredential{
+              xml.Key @credentials.key
+              xml.Password @credentials.password
+            }
+          }
+        end
       end
 
       # Add Client Detail information(account_number and meter_number) to xml request
       def add_client_detail(xml)
         xml.ClientDetail{
-          xml.AccountNumber @credentials.account_number
-          xml.MeterNumber @credentials.meter
+          if @child_detail
+            xml.AccountNumber @child_detail[:account_number]
+            xml.MeterNumber @child_detail[:meter]
+          else
+            xml.AccountNumber @credentials.account_number
+            xml.MeterNumber @credentials.meter
+          end
           xml.Localization{
             xml.LanguageCode 'en' # English
             xml.LocaleCode   'us' # United States

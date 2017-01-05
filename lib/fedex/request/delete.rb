@@ -9,14 +9,16 @@ module Fedex
       def initialize(credentials, options={})
         requires!(options, :tracking_number)
 
-        @tracking_number  = options[:tracking_number]
+        @tracking_number, @child_detail, @debug = options[:tracking_number], options[:child_detail], options[:debug]
         @deletion_control = options[:deletion_control] || 'DELETE_ALL_PACKAGES'
         @credentials  = credentials
+
+        @debug = ENV['DEBUG'] == 'true'
       end
 
       def process_request
-        api_response = self.class.post(api_url, :body => build_xml)
-        puts api_response if @debug == true
+        api_response = self.class.post(api_url, :body => build_xml).parsed_response
+        puts api_response if @debug
         response = parse_response(api_response)
         unless success?(response)
           error_message = if response[:shipment_reply]
